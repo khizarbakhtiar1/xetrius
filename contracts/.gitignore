@@ -1,0 +1,9 @@
+# Foundry
+cache/
+out/
+
+# Broadcast logs (may contain sensitive tx data)
+broadcast/
+
+# Dotenv
+.env
