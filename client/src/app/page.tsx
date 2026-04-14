@@ -6,12 +6,13 @@ import { TeamSelector } from "@/components/TeamSelector";
 import { TxToast } from "@/components/TxToast";
 import { getTeamById } from "@/lib/teams";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
-import { Zap, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function Home() {
+function HomeContent() {
   const { isConnected } = useAccount();
   const {
     hasPass,
@@ -19,19 +20,13 @@ export default function Home() {
     mintPass,
     status,
     mintError,
-    address,
   } = useTeamPass();
 
-  const [selected, setSelected] = useState<number | null>(null);
-  const [referrer, setReferrer] = useState("");
+  const searchParams = useSearchParams();
+  const refFromQuery = searchParams.get("ref") ?? "";
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const ref = params.get("ref");
-      if (ref) setReferrer(ref);
-    }
-  }, []);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [referrer, setReferrer] = useState(refFromQuery);
 
   const team = teamId !== null ? getTeamById(teamId) : null;
 
@@ -75,10 +70,6 @@ export default function Home() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center max-w-lg w-full"
       >
-        <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-6">
-          <Zap className="w-7 h-7 text-accent" />
-        </div>
-
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-3">PSL Fan Quests</h1>
         <p className="text-muted text-sm sm:text-base mb-10 max-w-sm mx-auto">
           Pick your franchise. Complete onchain missions. Earn stamps. Climb the leaderboard. Rep your team.
@@ -146,5 +137,19 @@ export default function Home() {
         )}
       </motion.div>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-muted text-sm">
+          Loading…
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -2,3 +2,6 @@
 *.log
 .env
 .env.local
+
+# Local-only deep-dive documentation (not for version control)
+internal-docs/

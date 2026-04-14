@@ -6,6 +6,10 @@ import { Navbar } from "@/components/Navbar";
 export const metadata: Metadata = {
   title: "Xetrius — PSL Fan Quests",
   description: "Complete team quests, earn onchain status. The PSL fan quest platform.",
+  icons: {
+    icon: "/xetrius_logo.png",
+    apple: "/xetrius_logo.png",
+  },
 };
 
 export default function RootLayout({

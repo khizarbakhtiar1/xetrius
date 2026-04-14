@@ -5,7 +5,7 @@ import { TEAMS } from "@/lib/teams";
 import type { Team } from "@/types";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Check, Users } from "lucide-react";
+import { Check } from "lucide-react";
 
 interface TeamSelectorProps {
   selected: number | null;
@@ -81,9 +81,6 @@ function TeamCard({
 
       <div className="text-center">
         <p className="text-sm font-semibold">{team.name}</p>
-        <p className="text-xs text-muted flex items-center gap-1 justify-center mt-1">
-          <Users className="w-3 h-3" /> PSL 2026
-        </p>
       </div>
     </motion.button>
   );

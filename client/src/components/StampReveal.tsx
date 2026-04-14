@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 interface StampRevealProps {
   show: boolean;
@@ -12,28 +12,25 @@ interface StampRevealProps {
 }
 
 export function StampReveal({ show, stampEmoji, stampLabel, points, onClose }: StampRevealProps) {
-  const [visible, setVisible] = useState(false);
-
   useEffect(() => {
-    if (show) {
-      setVisible(true);
-      const t = setTimeout(() => {
-        setVisible(false);
-        onClose();
-      }, 3000);
-      return () => clearTimeout(t);
-    }
+    if (!show) return;
+    const t = setTimeout(() => {
+      onClose();
+    }, 3000);
+    return () => clearTimeout(t);
   }, [show, onClose]);
 
   return (
     <AnimatePresence>
-      {visible && (
+      {show && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => { setVisible(false); onClose(); }}
+          onClick={() => {
+            onClose();
+          }}
         >
           <motion.div
             initial={{ scale: 0, rotate: -180 }}

@@ -23,10 +23,30 @@
   box-sizing: border-box;
 }
 
+html {
+  min-height: 100%;
+  background-color: var(--background);
+}
+
 body {
-  background: var(--background);
+  min-height: 100%;
   color: var(--foreground);
   font-family: 'Montserrat', sans-serif;
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(228, 0, 43, 0.28), transparent 52%),
+    radial-gradient(ellipse 100% 70% at 100% 0%, rgba(139, 92, 246, 0.12), transparent 45%),
+    radial-gradient(ellipse 90% 65% at 0% 100%, rgba(59, 130, 246, 0.1), transparent 50%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(228, 0, 43, 0.06), transparent 55%),
+    linear-gradient(
+      165deg,
+      #121018 0%,
+      var(--background) 32%,
+      #0c0b10 58%,
+      #08070c 100%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 ::selection {

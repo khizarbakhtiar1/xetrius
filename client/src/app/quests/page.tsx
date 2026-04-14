@@ -9,7 +9,7 @@ import { StampBadge } from "@/components/StampBadge";
 import { StampReveal } from "@/components/StampReveal";
 import { TxToast } from "@/components/TxToast";
 import { motion } from "framer-motion";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Ticket, MapPin, Vote, Users, Coins, ArrowRight, type LucideIcon } from "lucide-react";
@@ -39,24 +39,26 @@ export default function QuestsPage() {
     completeQuest,
     questStatus,
     questError,
-    isLoading,
   } = useQuests();
 
   const team = teamId !== null ? getTeamById(teamId) : null;
 
   const [revealStamp, setRevealStamp] = useState<number | null>(null);
 
-  // Track which stamps were just earned to trigger reveal
-  const prevCompleted = useMemo(() => new Set<number>(), []);
+  const prevCompletedRef = useRef<Set<number>>(new Set());
   useEffect(() => {
     for (const p of progress) {
-      if (p.completed && !prevCompleted.has(p.questId)) {
-        prevCompleted.add(p.questId);
+      if (p.completed && !prevCompletedRef.current.has(p.questId)) {
+        prevCompletedRef.current.add(p.questId);
         const quest = QUESTS.find((q) => q.id === p.questId);
-        if (quest) setRevealStamp(quest.stampId);
+        if (quest) {
+          queueMicrotask(() => {
+            setRevealStamp(quest.stampId);
+          });
+        }
       }
     }
-  }, [progress, prevCompleted]);
+  }, [progress]);
 
   // Derive the most active TxStatus for the global toast
   const activeStatus = Object.values(questStatus).find(

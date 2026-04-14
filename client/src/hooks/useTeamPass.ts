@@ -142,7 +142,17 @@ export function useTeamPass() {
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [isMintPending, isMintConfirming, isMintSuccess, mintWriteError, isChangePending, isChangeConfirming, isChangeSuccess, changeWriteError]);
+  }, [
+    isMintPending,
+    isMintConfirming,
+    isMintSuccess,
+    mintWriteError,
+    isChangePending,
+    isChangeConfirming,
+    isChangeSuccess,
+    changeWriteError,
+    handleError,
+  ]);
 
   // ── Invalidation on success ───────────────────────────────────────
 

@@ -3,6 +3,7 @@ import { wirefluidTestnet } from "./chains";
 
 export const config = createConfig({
   chains: [wirefluidTestnet],
+  ssr: true,
   transports: {
     [wirefluidTestnet.id]: http(),
   },

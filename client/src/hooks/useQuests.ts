@@ -17,10 +17,12 @@ import {
 import { QUESTS, ACTIVE_MATCH_ID } from "@/lib/quests";
 import { useErrorToast } from "./useErrorToast";
 import { logger } from "@/lib/logger";
-import type { FanProgress, Stamp, TxStatus, VerifyQuestResponse, ApiError } from "@/types";
+import type { FanProgress, TxStatus, VerifyQuestResponse, ApiError } from "@/types";
 
 type QuestStatusMap = Record<number, TxStatus>;
 type QuestErrorMap = Record<number, string | null>;
+
+const STAMP_QUERY_IDS = [1, 2, 3, 4, 5] as const;
 
 export function useQuests() {
   const { address } = useAccount();
@@ -30,7 +32,6 @@ export function useQuests() {
 
   const [questStatus, setQuestStatus] = useState<QuestStatusMap>({});
   const [questError, setQuestError] = useState<QuestErrorMap>({});
-  const [stamps, setStamps] = useState<Stamp[]>([]);
 
   // ── Read: getUserProgress ─────────────────────────────────────────
 
@@ -51,8 +52,6 @@ export function useQuests() {
   }, [progressRaw]);
 
   // ── Read: stamp balances ──────────────────────────────────────────
-
-  const stampIds = [1, 2, 3, 4, 5] as const;
 
   const stamp1 = useReadContract({
     address: ADDRESSES.missionStamps,
@@ -93,11 +92,11 @@ export function useQuests() {
   const stampBalances = useMemo(
     () =>
       [stamp1, stamp2, stamp3, stamp4, stamp5].map((s, i) => ({
-        id: stampIds[i],
+        id: STAMP_QUERY_IDS[i],
         balance: s.data ? Number(s.data) : 0,
         refetch: s.refetch,
       })),
-    [stamp1.data, stamp2.data, stamp3.data, stamp4.data, stamp5.data]
+    [stamp1, stamp2, stamp3, stamp4, stamp5]
   );
 
   // ── Write: completeQuest ──────────────────────────────────────────
@@ -143,6 +142,7 @@ export function useQuests() {
       stampBalances.forEach((s) => s.refetch());
       setActiveQuestId(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- single-tx lifecycle for activeQuestId; full deps would over-fire
   }, [isWritePending, isConfirming, isSuccess, activeQuestId]);
 
   useEffect(() => {
@@ -151,6 +151,7 @@ export function useQuests() {
       updateStatus(activeQuestId, "error", message);
       setActiveQuestId(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- error path only; updateStatus omitted to limit churn
   }, [writeError, activeQuestId, handleError]);
 
   // ── Core action ───────────────────────────────────────────────────
@@ -231,7 +232,6 @@ export function useQuests() {
 
   return {
     progress,
-    stamps,
     stampBalances,
     completeQuest,
     activeMatchId,
