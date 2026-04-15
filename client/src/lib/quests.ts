@@ -38,6 +38,33 @@ export const QUESTS: Quest[] = [
     icon: "vote",
   },
   {
+    id: 6,
+    title: "Predict Match Winner",
+    description: "Predict which team wins the match before it starts",
+    points: 35,
+    stampId: 6,
+    requiresProof: true,
+    icon: "target",
+  },
+  {
+    id: 7,
+    title: "Watch Party Check-in",
+    description: "Check in while a match is live — prove you're watching",
+    points: 20,
+    stampId: 7,
+    requiresProof: true,
+    icon: "tv",
+  },
+  {
+    id: 8,
+    title: "Superfan",
+    description: "Complete all 5 base quests for a match to earn the Superfan stamp",
+    points: 50,
+    stampId: 8,
+    requiresProof: true,
+    icon: "star",
+  },
+  {
     id: 5,
     title: "Refer a Fan",
     description: "Share your referral link — when someone mints, claim your stamp",
@@ -52,4 +79,4 @@ export function getQuestById(id: number): Quest | undefined {
   return QUESTS.find((q) => q.id === id);
 }
 
-export const ACTIVE_MATCH_ID = Number(process.env.NEXT_PUBLIC_ACTIVE_MATCH_ID ?? "1");
+export const ACTIVE_MATCH_ID = Number(process.env.NEXT_PUBLIC_ACTIVE_MATCH_ID ?? "23");

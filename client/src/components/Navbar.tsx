@@ -5,10 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { WalletConnect } from "./WalletConnect";
-import { Trophy, User, LayoutGrid } from "lucide-react";
+import { Trophy, User, LayoutGrid, Calendar } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/quests", label: "Quests", icon: LayoutGrid },
+  { href: "/matches", label: "Matches", icon: Calendar },
   { href: "/leaderboard", label: "Fan Wars", icon: Trophy },
   { href: "/profile", label: "Profile", icon: User },
 ] as const;

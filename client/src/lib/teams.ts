@@ -7,8 +7,8 @@ export const TEAMS: Team[] = [
   { id: 3, name: "Peshawar Zalmi", shortName: "PZ", logo: "/peshawar-zalmi-logo.png", primaryColor: "#ffdc00", secondaryColor: "#fbbf24" },
   { id: 4, name: "Quetta Gladiators", shortName: "QG", logo: "/quetta-gladiators-logo.png", primaryColor: "#b10dc9", secondaryColor: "#c084fc" },
   { id: 5, name: "Multan Sultans", shortName: "MS", logo: "/multan-sultans-logo.png", primaryColor: "#00b4d8", secondaryColor: "#22d3ee" },
-  { id: 6, name: "Rawalpindi Raiders", shortName: "RR", logo: "/Pindiz-Logo.png", primaryColor: "#ff6b35", secondaryColor: "#fb923c" },
-  { id: 7, name: "Hyderabad Hunters", shortName: "HH", logo: "/Hyderabad_Kingsmen_logo.svg.png", primaryColor: "#06d6a0", secondaryColor: "#34d399" },
+  { id: 6, name: "Rawalpindi Pindiz", shortName: "RPZ", logo: "/Pindiz-Logo.png", primaryColor: "#ff6b35", secondaryColor: "#fb923c" },
+  { id: 7, name: "Hyderabad Kingsmen", shortName: "HK", logo: "/Hyderabad_Kingsmen_logo.svg.png", primaryColor: "#06d6a0", secondaryColor: "#34d399" },
 ];
 
 export function getTeamById(id: number): Team | undefined {

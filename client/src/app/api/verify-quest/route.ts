@@ -3,7 +3,8 @@ import { z } from "zod";
 import { signQuestProof, logSigningEvent } from "@/lib/signer";
 import { verifyHasPass, getReferralCount } from "@/lib/chain-reader";
 import { hasVoted } from "@/lib/vote-store";
-import { getTossResult, getMatchWindow } from "@/lib/matches";
+import { hasPredicted, getPrediction } from "@/lib/prediction-store";
+import { getTossResult, getMatchWindow, getMatchById, getLiveMatches } from "@/lib/matches";
 import { logger } from "@/lib/logger";
 
 // ── Rate Limiting (in-memory, good enough for hackathon) ────────────
@@ -31,7 +32,7 @@ const evmAddressRegex = /^0x[a-fA-F0-9]{40}$/;
 
 const baseSchema = z.object({
   userAddress: z.string().regex(evmAddressRegex, "Invalid EVM address"),
-  questId: z.number().int().min(1).max(5),
+  questId: z.number().int().min(1).max(8),
   matchId: z.number().int().min(0),
   verificationData: z.unknown(),
 });
@@ -87,6 +88,54 @@ async function verifyReferral(userAddress: string): Promise<string | null> {
   return null;
 }
 
+function verifyMatchPrediction(
+  userAddress: string,
+  matchId: number
+): string | null {
+  if (!hasPredicted(userAddress, matchId)) {
+    return "You must submit a match prediction first";
+  }
+  const pred = getPrediction(userAddress, matchId);
+  if (!pred) return "Prediction not found";
+
+  const match = getMatchById(matchId);
+  if (!match) return "Match not found";
+  if (match.status !== "completed") return "Match hasn't finished yet — check back after it ends";
+  if (!match.result) return "Match result not yet available";
+
+  const teamAName = match.teamA;
+  const resultLower = match.result.toLowerCase();
+  const teamAWon = resultLower.includes(teamAName.toLowerCase()) && resultLower.includes("won");
+  const predictedAWins = pred.choice === "A";
+
+  if ((teamAWon && predictedAWins) || (!teamAWon && !predictedAWins)) {
+    return null;
+  }
+  return "Your prediction was incorrect";
+}
+
+function verifyWatchParty(matchId: number): string | null {
+  const liveMatches = getLiveMatches();
+  const isLive = liveMatches.some((m) => m.matchId === matchId);
+  if (!isLive) return "No live match — check in when a match is being played";
+  return null;
+}
+
+async function verifySuperfan(
+  userAddress: string,
+  matchId: number
+): Promise<string | null> {
+  const hasPas = await verifyHasPass(userAddress);
+  if (!hasPas) return "You need a Team Pass";
+
+  if (!hasVoted(userAddress, matchId)) return "Complete Quest 4 (Fan Poll) first";
+
+  const window = getMatchWindow(matchId);
+  if (!window) return "Match not configured";
+
+  return null;
+}
+
 // ── Error code mapping ──────────────────────────────────────────────
 
 const ERROR_CODES: Record<number, string> = {
@@ -95,6 +144,9 @@ const ERROR_CODES: Record<number, string> = {
   3: "CHECKIN_FAILED",
   4: "VOTE_REQUIRED",
   5: "NO_REFERRALS",
+  6: "PREDICTION_FAILED",
+  7: "NOT_LIVE",
+  8: "INCOMPLETE_QUESTS",
 };
 
 // ── Route Handler ───────────────────────────────────────────────────
@@ -139,6 +191,15 @@ export async function POST(request: NextRequest) {
         break;
       case 5:
         errorMsg = await verifyReferral(userAddress);
+        break;
+      case 6:
+        errorMsg = verifyMatchPrediction(userAddress, matchId);
+        break;
+      case 7:
+        errorMsg = verifyWatchParty(matchId);
+        break;
+      case 8:
+        errorMsg = await verifySuperfan(userAddress, matchId);
         break;
       default:
         return NextResponse.json(

@@ -25,14 +25,17 @@ export default function ProfilePage() {
     query: { enabled: !!address },
   });
 
-  const stampIds = [1, 2, 3, 4, 5] as const;
+  const stampIds = [1, 2, 3, 4, 5, 6, 7, 8] as const;
   const stamp1 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 1n] : undefined, query: { enabled: !!address } });
   const stamp2 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 2n] : undefined, query: { enabled: !!address } });
   const stamp3 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 3n] : undefined, query: { enabled: !!address } });
   const stamp4 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 4n] : undefined, query: { enabled: !!address } });
   const stamp5 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 5n] : undefined, query: { enabled: !!address } });
+  const stamp6 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 6n] : undefined, query: { enabled: !!address } });
+  const stamp7 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 7n] : undefined, query: { enabled: !!address } });
+  const stamp8 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 8n] : undefined, query: { enabled: !!address } });
 
-  const balances = [stamp1, stamp2, stamp3, stamp4, stamp5].map((s, i) => ({
+  const balances = [stamp1, stamp2, stamp3, stamp4, stamp5, stamp6, stamp7, stamp8].map((s, i) => ({
     id: stampIds[i],
     balance: s.data ? Number(s.data) : 0,
   }));

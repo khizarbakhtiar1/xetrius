@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { MapPin, Clock, Radio } from "lucide-react";
 import type { MatchData } from "@/types";
@@ -46,10 +47,11 @@ function formatMatchTime(timestamp: number): string {
 
 export function MatchBanner({ match }: MatchBannerProps) {
   return (
+    <Link href={`/matches/${match.matchId}`}>
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-xl border border-card-border bg-card p-4 sm:p-5 mb-6 overflow-hidden"
+      className="relative rounded-xl border border-card-border bg-card p-4 sm:p-5 mb-6 overflow-hidden hover:border-white/15 transition-colors"
     >
       <div className="flex items-center justify-between gap-3 mb-3">
         <p className="text-[10px] font-bold uppercase tracking-wider text-muted">
@@ -103,5 +105,6 @@ export function MatchBanner({ match }: MatchBannerProps) {
         </span>
       </div>
     </motion.div>
+    </Link>
   );
 }

@@ -21,7 +21,7 @@ import type { FanProgress, TxStatus, VerifyQuestResponse, ApiError } from "@/typ
 type QuestStatusMap = Record<number, TxStatus>;
 type QuestErrorMap = Record<number, string | null>;
 
-const STAMP_QUERY_IDS = [1, 2, 3, 4, 5] as const;
+const STAMP_QUERY_IDS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 export function useQuests() {
   const { address } = useAccount();
@@ -32,7 +32,7 @@ export function useQuests() {
   const [questStatus, setQuestStatus] = useState<QuestStatusMap>({});
   const [questError, setQuestError] = useState<QuestErrorMap>({});
 
-  // ── Read: getUserProgress ─────────────────────────────────────────
+  // ── Read: getUserProgress (quests 1-5) ────────────────────────────
 
   const { data: progressRaw, queryKey: progressKey } = useReadContract({
     address: ADDRESSES.questEngine,
@@ -42,60 +42,66 @@ export function useQuests() {
     query: { enabled: !!address },
   });
 
+  // Individual reads for quests 6-8 (not covered by getUserProgress)
+  const q6 = useReadContract({
+    address: ADDRESSES.questEngine,
+    abi: QUEST_ENGINE_ABI,
+    functionName: "completed",
+    args: address ? [address, 6n, BigInt(activeMatchId)] : undefined,
+    query: { enabled: !!address },
+  });
+  const q7 = useReadContract({
+    address: ADDRESSES.questEngine,
+    abi: QUEST_ENGINE_ABI,
+    functionName: "completed",
+    args: address ? [address, 7n, BigInt(activeMatchId)] : undefined,
+    query: { enabled: !!address },
+  });
+  const q8 = useReadContract({
+    address: ADDRESSES.questEngine,
+    abi: QUEST_ENGINE_ABI,
+    functionName: "completed",
+    args: address ? [address, 8n, BigInt(activeMatchId)] : undefined,
+    query: { enabled: !!address },
+  });
+
   const progress: FanProgress[] = useMemo(() => {
     const bools = progressRaw as readonly boolean[] | undefined;
-    return QUESTS.map((quest, i) => ({
+    const extraCompleted: Record<number, boolean> = {
+      6: q6.data === true,
+      7: q7.data === true,
+      8: q8.data === true,
+    };
+    return QUESTS.map((quest) => ({
       questId: quest.id,
-      completed: bools ? bools[i] ?? false : false,
+      completed:
+        quest.id <= 5
+          ? bools
+            ? bools[quest.id - 1] ?? false
+            : false
+          : extraCompleted[quest.id] ?? false,
     }));
-  }, [progressRaw]);
+  }, [progressRaw, q6.data, q7.data, q8.data]);
 
   // ── Read: stamp balances ──────────────────────────────────────────
 
-  const stamp1 = useReadContract({
-    address: ADDRESSES.missionStamps,
-    abi: MISSION_STAMPS_ABI,
-    functionName: "balanceOf",
-    args: address ? [address, 1n] : undefined,
-    query: { enabled: !!address },
-  });
-  const stamp2 = useReadContract({
-    address: ADDRESSES.missionStamps,
-    abi: MISSION_STAMPS_ABI,
-    functionName: "balanceOf",
-    args: address ? [address, 2n] : undefined,
-    query: { enabled: !!address },
-  });
-  const stamp3 = useReadContract({
-    address: ADDRESSES.missionStamps,
-    abi: MISSION_STAMPS_ABI,
-    functionName: "balanceOf",
-    args: address ? [address, 3n] : undefined,
-    query: { enabled: !!address },
-  });
-  const stamp4 = useReadContract({
-    address: ADDRESSES.missionStamps,
-    abi: MISSION_STAMPS_ABI,
-    functionName: "balanceOf",
-    args: address ? [address, 4n] : undefined,
-    query: { enabled: !!address },
-  });
-  const stamp5 = useReadContract({
-    address: ADDRESSES.missionStamps,
-    abi: MISSION_STAMPS_ABI,
-    functionName: "balanceOf",
-    args: address ? [address, 5n] : undefined,
-    query: { enabled: !!address },
-  });
+  const stamp1 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 1n] : undefined, query: { enabled: !!address } });
+  const stamp2 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 2n] : undefined, query: { enabled: !!address } });
+  const stamp3 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 3n] : undefined, query: { enabled: !!address } });
+  const stamp4 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 4n] : undefined, query: { enabled: !!address } });
+  const stamp5 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 5n] : undefined, query: { enabled: !!address } });
+  const stamp6 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 6n] : undefined, query: { enabled: !!address } });
+  const stamp7 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 7n] : undefined, query: { enabled: !!address } });
+  const stamp8 = useReadContract({ address: ADDRESSES.missionStamps, abi: MISSION_STAMPS_ABI, functionName: "balanceOf", args: address ? [address, 8n] : undefined, query: { enabled: !!address } });
 
   const stampBalances = useMemo(
     () =>
-      [stamp1, stamp2, stamp3, stamp4, stamp5].map((s, i) => ({
+      [stamp1, stamp2, stamp3, stamp4, stamp5, stamp6, stamp7, stamp8].map((s, i) => ({
         id: STAMP_QUERY_IDS[i],
         balance: s.data ? Number(s.data) : 0,
         refetch: s.refetch,
       })),
-    [stamp1, stamp2, stamp3, stamp4, stamp5]
+    [stamp1, stamp2, stamp3, stamp4, stamp5, stamp6, stamp7, stamp8]
   );
 
   // ── Write: completeQuest ──────────────────────────────────────────

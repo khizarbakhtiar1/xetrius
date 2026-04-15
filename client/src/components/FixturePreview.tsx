@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Calendar, Radio } from "lucide-react";
 import type { MatchData } from "@/types";
@@ -33,12 +34,12 @@ export function FixturePreview({ matches }: FixturePreviewProps) {
 
       <div className="space-y-2">
         {matches.map((m, i) => (
+          <Link key={m.matchId} href={`/matches/${m.matchId}`}>
           <motion.div
-            key={m.matchId}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="flex items-center gap-3 p-3 rounded-xl bg-card border border-card-border"
+            className="flex items-center gap-3 p-3 rounded-xl bg-card border border-card-border hover:border-white/15 transition-colors"
           >
             <div className="text-center shrink-0 w-12">
               <p className="text-[10px] font-bold text-muted uppercase">{formatShortDate(m.startTime)}</p>
@@ -73,6 +74,7 @@ export function FixturePreview({ matches }: FixturePreviewProps) {
               Match {m.matchId}
             </div>
           </motion.div>
+          </Link>
         ))}
       </div>
     </div>

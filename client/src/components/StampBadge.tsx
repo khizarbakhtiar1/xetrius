@@ -9,6 +9,9 @@ const STAMP_META: Record<number, { label: string; emoji: string }> = {
   3: { label: "Check-in", emoji: "📍" },
   4: { label: "Fan Voter", emoji: "🗳️" },
   5: { label: "Recruiter", emoji: "🤝" },
+  6: { label: "Match Prophet", emoji: "🎯" },
+  7: { label: "Watch Party", emoji: "📺" },
+  8: { label: "Superfan", emoji: "⭐" },
 };
 
 interface StampBadgeProps {

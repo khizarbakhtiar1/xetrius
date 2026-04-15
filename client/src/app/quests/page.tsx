@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Ticket, MapPin, Vote, Users, Coins, ArrowRight, type LucideIcon } from "lucide-react";
+import { Ticket, MapPin, Vote, Users, Coins, ArrowRight, Target, Tv, Star, type LucideIcon } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   ticket: Ticket,
@@ -22,6 +22,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   vote: Vote,
   users: Users,
   coins: Coins,
+  target: Target,
+  tv: Tv,
+  star: Star,
 };
 
 const STAMP_META: Record<number, { emoji: string; label: string; points: number }> = {
@@ -30,6 +33,9 @@ const STAMP_META: Record<number, { emoji: string; label: string; points: number 
   3: { emoji: "📍", label: "Match Check-in", points: 15 },
   4: { emoji: "🗳️", label: "Fan Voter", points: 15 },
   5: { emoji: "🤝", label: "Recruiter", points: 30 },
+  6: { emoji: "🎯", label: "Match Prophet", points: 35 },
+  7: { emoji: "📺", label: "Watch Party", points: 20 },
+  8: { emoji: "⭐", label: "Superfan", points: 50 },
 };
 
 const POLL_OPTIONS = [
@@ -56,6 +62,9 @@ export default function QuestsPage() {
 
   const [revealStamp, setRevealStamp] = useState<number | null>(null);
   const [tossPrediction, setTossPrediction] = useState<"A" | "B" | null>(null);
+  const [matchPrediction, setMatchPrediction] = useState<"A" | "B" | null>(null);
+  const [matchPredSubmitted, setMatchPredSubmitted] = useState(false);
+  const [matchPredError, setMatchPredError] = useState<string | null>(null);
   const [pollVote, setPollVote] = useState<string | null>(null);
   const [pollSubmitted, setPollSubmitted] = useState(false);
   const [pollError, setPollError] = useState<string | null>(null);
@@ -92,6 +101,52 @@ export default function QuestsPage() {
     checkPollStatus();
     return () => { cancelled = true; };
   }, [address]);
+
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    async function checkPredStatus() {
+      try {
+        const res = await fetch(`/api/match-prediction?userAddress=${address}&matchId=${ACTIVE_MATCH_ID}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled && data.predicted) {
+          setMatchPredSubmitted(true);
+          if (data.choice) setMatchPrediction(data.choice);
+        }
+      } catch { /* non-critical */ }
+    }
+    checkPredStatus();
+    return () => { cancelled = true; };
+  }, [address]);
+
+  const submitMatchPrediction = useCallback(async () => {
+    if (!matchPrediction || !address) return;
+    setMatchPredError(null);
+    try {
+      const res = await fetch("/api/match-prediction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userAddress: address,
+          matchId: ACTIVE_MATCH_ID,
+          choice: matchPrediction,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.code === "ALREADY_PREDICTED") {
+          setMatchPredSubmitted(true);
+          return;
+        }
+        setMatchPredError(data?.error ?? "Failed to submit prediction");
+        return;
+      }
+      setMatchPredSubmitted(true);
+    } catch {
+      setMatchPredError("Network error — try again");
+    }
+  }, [matchPrediction, address]);
 
   const submitPollVote = useCallback(async () => {
     if (!pollVote || !address) return;
@@ -210,6 +265,24 @@ export default function QuestsPage() {
                 onAction = () => completeQuest(quest.id);
                 break;
               }
+              case 6: {
+                disabled = !matchPredSubmitted;
+                label = matchPredSubmitted ? "Claim Stamp" : "Submit prediction first";
+                onAction = () => completeQuest(quest.id);
+                break;
+              }
+              case 7: {
+                label = "Check In Now";
+                onAction = () => completeQuest(quest.id);
+                break;
+              }
+              case 8: {
+                const base5Done = progress.filter((p) => p.questId <= 5 && p.completed).length === 5;
+                disabled = !base5Done;
+                label = base5Done ? "Claim Superfan Stamp" : "Complete quests 1-5 first";
+                onAction = () => completeQuest(quest.id);
+                break;
+              }
               default: {
                 onAction = () => completeQuest(quest.id);
                 break;
@@ -234,19 +307,24 @@ export default function QuestsPage() {
                 {/* Quest 2: Toss Prediction selector */}
                 {quest.id === 2 && !completed && (
                   <div className="flex gap-2">
-                    {(["A", "B"] as const).map((side) => (
-                      <button
-                        key={side}
-                        onClick={() => setTossPrediction(side)}
-                        className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border ${
-                          tossPrediction === side
-                            ? "bg-white text-black border-white"
-                            : "bg-white/5 text-muted border-white/10 hover:bg-white/10"
-                        }`}
-                      >
-                        Team {side}
-                      </button>
-                    ))}
+                    {(["A", "B"] as const).map((side) => {
+                      const teamName = side === "A" ? (match?.teamAName ?? "Team A") : (match?.teamBName ?? "Team B");
+                      const teamLogo = side === "A" ? match?.teamALogo : match?.teamBLogo;
+                      return (
+                        <button
+                          key={side}
+                          onClick={() => setTossPrediction(side)}
+                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center justify-center gap-2 ${
+                            tossPrediction === side
+                              ? "bg-white text-black border-white"
+                              : "bg-white/5 text-muted border-white/10 hover:bg-white/10"
+                          }`}
+                        >
+                          {teamLogo && <Image src={teamLogo} alt={teamName} width={16} height={16} className="rounded-sm object-contain" />}
+                          {teamName}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -283,6 +361,47 @@ export default function QuestsPage() {
                         {pollError && (
                           <p className="text-xs text-red-400">{pollError}</p>
                         )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* Quest 6: Match Winner Prediction */}
+                {quest.id === 6 && !completed && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted font-medium">
+                      {matchPredSubmitted ? "Prediction locked! Claim stamp after match ends." : "Who will win this match?"}
+                    </p>
+                    {!matchPredSubmitted && (
+                      <>
+                        <div className="flex gap-2">
+                          {(["A", "B"] as const).map((side) => {
+                            const teamName = side === "A" ? (match?.teamAName ?? "Team A") : (match?.teamBName ?? "Team B");
+                            const teamLogo = side === "A" ? match?.teamALogo : match?.teamBLogo;
+                            return (
+                              <button
+                                key={side}
+                                onClick={() => setMatchPrediction(side)}
+                                className={`flex-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer border flex items-center justify-center gap-2 ${
+                                  matchPrediction === side
+                                    ? "bg-white text-black border-white"
+                                    : "bg-white/5 text-muted border-white/10 hover:bg-white/10"
+                                }`}
+                              >
+                                {teamLogo && <Image src={teamLogo} alt={teamName} width={16} height={16} className="rounded-sm object-contain" />}
+                                {teamName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          onClick={submitMatchPrediction}
+                          disabled={!matchPrediction}
+                          className="w-full px-3 py-2 rounded-lg text-xs font-semibold bg-accent text-black hover:bg-accent/90 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Lock Prediction
+                        </button>
+                        {matchPredError && <p className="text-xs text-red-400">{matchPredError}</p>}
                       </>
                     )}
                   </div>

@@ -58,10 +58,24 @@ export interface MatchData {
   startTime: number;
   status: "upcoming" | "live" | "completed";
   tossWinner: "A" | "B" | null;
+  tossDecision?: "bat" | "bowl" | null;
+  scoreA?: string;
+  scoreB?: string;
+  result?: string;
   teamAName?: string;
   teamALogo?: string;
   teamAPrimaryColor?: string;
   teamBName?: string;
   teamBLogo?: string;
   teamBPrimaryColor?: string;
+}
+
+export interface PointsTableEntry {
+  teamShortName: string;
+  matches: number;
+  won: number;
+  lost: number;
+  noResult: number;
+  points: number;
+  nrr: string;
 }

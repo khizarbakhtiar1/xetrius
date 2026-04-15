@@ -3,6 +3,7 @@ import "./globals.css";
 import "@/lib/env";
 import { Providers } from "@/providers";
 import { Navbar } from "@/components/Navbar";
+import { LiveScoreWrapper } from "@/components/LiveScoreWrapper";
 
 export const metadata: Metadata = {
   title: "Xetrius — PSL Fan Quests",
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <Providers>
           <Navbar />
+          <LiveScoreWrapper />
           <main className="flex-1">{children}</main>
         </Providers>
       </body>
