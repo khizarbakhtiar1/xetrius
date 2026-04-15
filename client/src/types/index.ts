@@ -49,3 +49,19 @@ export interface ApiError {
   error: string;
   code: string;
 }
+
+export interface MatchData {
+  matchId: number;
+  teamA: string;
+  teamB: string;
+  venue: string;
+  startTime: number;
+  status: "upcoming" | "live" | "completed";
+  tossWinner: "A" | "B" | null;
+  teamAName?: string;
+  teamALogo?: string;
+  teamAPrimaryColor?: string;
+  teamBName?: string;
+  teamBLogo?: string;
+  teamBPrimaryColor?: string;
+}

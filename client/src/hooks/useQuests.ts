@@ -12,7 +12,6 @@ import {
   ADDRESSES,
   QUEST_ENGINE_ABI,
   MISSION_STAMPS_ABI,
-  QUEST_IDS,
 } from "@/lib/contracts";
 import { QUESTS, ACTIVE_MATCH_ID } from "@/lib/quests";
 import { useErrorToast } from "./useErrorToast";
@@ -209,11 +208,7 @@ export function useQuests() {
         }
       }
 
-      // Determine matchId based on quest type
-      const matchId =
-        questId === QUEST_IDS.TOSS_PREDICT || questId === QUEST_IDS.MATCH_CHECKIN
-          ? BigInt(activeMatchId)
-          : 0n;
+      const matchId = BigInt(activeMatchId);
 
       updateStatus(questId, "pending");
       writeContract({

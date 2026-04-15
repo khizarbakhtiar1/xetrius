@@ -1,8 +1,9 @@
 "use client";
 
 import { useAccount } from "wagmi";
-import { useTeamPass } from "@/hooks";
+import { useTeamPass, useMatch } from "@/hooks";
 import { TeamSelector } from "@/components/TeamSelector";
+import { FixturePreview } from "@/components/FixturePreview";
 import { TxToast } from "@/components/TxToast";
 import { getTeamById } from "@/lib/teams";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +22,7 @@ function HomeContent() {
     status,
     mintError,
   } = useTeamPass();
+  const { allMatches } = useMatch();
 
   const searchParams = useSearchParams();
   const refFromQuery = searchParams.get("ref") ?? "";
@@ -32,7 +34,7 @@ function HomeContent() {
 
   if (isConnected && hasPass && team) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+      <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 pt-10 sm:pt-14 pb-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -55,6 +57,8 @@ function HomeContent() {
             Go to Quests <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
+
+        {allMatches.length > 0 && <FixturePreview matches={allMatches} />}
       </div>
     );
   }
@@ -62,7 +66,7 @@ function HomeContent() {
   const isLoading = status === "signing" || status === "pending";
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4">
+    <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 pt-10 sm:pt-14 pb-6">
       <TxToast show={status !== "idle"} status={status} message={mintError?.message} />
 
       <motion.div
@@ -136,6 +140,8 @@ function HomeContent() {
           </AnimatePresence>
         )}
       </motion.div>
+
+      {allMatches.length > 0 && <FixturePreview matches={allMatches} />}
     </div>
   );
 }
@@ -144,7 +150,7 @@ export default function Home() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-muted text-sm">
+        <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 pt-10 sm:pt-14 pb-6 text-muted text-sm">
           Loading…
         </div>
       }

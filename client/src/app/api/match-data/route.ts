@@ -1,56 +1,63 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
-const querySchema = z.object({
-  matchId: z.coerce.number().int().min(0),
-});
-
-interface MatchData {
-  matchId: number;
-  teamA: string;
-  teamB: string;
-  status: "upcoming" | "live" | "completed";
-  tossWinner: "A" | "B" | null;
-  startTime: number;
-}
-
-const MATCH_DATA: Record<number, MatchData> = {
-  1: {
-    matchId: 1,
-    teamA: "Islamabad United",
-    teamB: "Lahore Qalandars",
-    status: "live",
-    tossWinner: "A",
-    startTime: Date.now() - 2 * 60 * 60 * 1000,
-  },
-  2: {
-    matchId: 2,
-    teamA: "Karachi Kings",
-    teamB: "Peshawar Zalmi",
-    status: "upcoming",
-    tossWinner: null,
-    startTime: Date.now() + 24 * 60 * 60 * 1000,
-  },
-};
+import { getAllMatches, getMatchById, getMatchWithTeams } from "@/lib/matches";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const parsed = querySchema.safeParse({ matchId: searchParams.get("matchId") });
+  const matchIdParam = searchParams.get("matchId");
 
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "matchId query parameter required (integer)", code: "VALIDATION_ERROR" },
-      { status: 400 }
-    );
+  if (matchIdParam) {
+    const matchId = Number(matchIdParam);
+    if (!Number.isInteger(matchId) || matchId < 0) {
+      return NextResponse.json(
+        { error: "matchId must be a non-negative integer", code: "VALIDATION_ERROR" },
+        { status: 400 }
+      );
+    }
+
+    const match = getMatchById(matchId);
+    if (!match) {
+      return NextResponse.json(
+        { error: "Match not found", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    const enriched = getMatchWithTeams(match);
+    return NextResponse.json({
+      matchId: enriched.matchId,
+      teamA: enriched.teamA,
+      teamB: enriched.teamB,
+      venue: enriched.venue,
+      startTime: enriched.startTime,
+      status: enriched.status,
+      tossWinner: enriched.tossWinner,
+      teamAName: enriched.teamAFull?.name ?? enriched.teamA,
+      teamALogo: enriched.teamAFull?.logo ?? null,
+      teamAPrimaryColor: enriched.teamAFull?.primaryColor ?? null,
+      teamBName: enriched.teamBFull?.name ?? enriched.teamB,
+      teamBLogo: enriched.teamBFull?.logo ?? null,
+      teamBPrimaryColor: enriched.teamBFull?.primaryColor ?? null,
+    });
   }
 
-  const match = MATCH_DATA[parsed.data.matchId];
-  if (!match) {
-    return NextResponse.json(
-      { error: "Match not found", code: "NOT_FOUND" },
-      { status: 404 }
-    );
-  }
+  const schedule = getAllMatches().map((m) => {
+    const enriched = getMatchWithTeams(m);
+    return {
+      matchId: enriched.matchId,
+      teamA: enriched.teamA,
+      teamB: enriched.teamB,
+      venue: enriched.venue,
+      startTime: enriched.startTime,
+      status: enriched.status,
+      tossWinner: enriched.tossWinner,
+      teamAName: enriched.teamAFull?.name ?? enriched.teamA,
+      teamALogo: enriched.teamAFull?.logo ?? null,
+      teamAPrimaryColor: enriched.teamAFull?.primaryColor ?? null,
+      teamBName: enriched.teamBFull?.name ?? enriched.teamB,
+      teamBLogo: enriched.teamBFull?.logo ?? null,
+      teamBPrimaryColor: enriched.teamBFull?.primaryColor ?? null,
+    };
+  });
 
-  return NextResponse.json(match);
+  return NextResponse.json({ matches: schedule });
 }

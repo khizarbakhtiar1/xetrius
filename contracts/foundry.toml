@@ -1,3 +1,6 @@
+[rpc_endpoints]
+wirefluid = "https://evm.wirefluid.com"
+
 [profile.default]
 src = "src"
 out = "out"

@@ -7,7 +7,7 @@ export const QUESTS: Quest[] = [
     description: "Claim your franchise allegiance and earn your first mission stamp",
     points: 10,
     stampId: 1,
-    requiresProof: false,
+    requiresProof: true,
     icon: "ticket",
   },
   {
@@ -34,7 +34,7 @@ export const QUESTS: Quest[] = [
     description: "Cast your vote in the active PSL fan poll",
     points: 15,
     stampId: 4,
-    requiresProof: false,
+    requiresProof: true,
     icon: "vote",
   },
   {
@@ -43,7 +43,7 @@ export const QUESTS: Quest[] = [
     description: "Share your referral link — when someone mints, claim your stamp",
     points: 30,
     stampId: 5,
-    requiresProof: false,
+    requiresProof: true,
     icon: "users",
   },
 ];

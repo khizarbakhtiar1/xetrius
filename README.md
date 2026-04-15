@@ -42,14 +42,14 @@ forge build
 forge test
 ```
 
-Deploy to WireFluid (set `PRIVATE_KEY`, `RPC_URL_WIREFLUID`, and optional `VERIFIER_ADDRESS` in `.env`; see `contracts/.env.example`):
+Deploy to WireFluid (copy `contracts/.env.example` to `contracts/.env`, then set `PRIVATE_KEY`, `RPC_URL_WIREFLUID`, and optional `VERIFIER_ADDRESS`; fund the deployer with WIRE on testnet):
 
 ```bash
 cd contracts
 make deploy-wirefluid
 ```
 
-The script broadcasts `script/Deploy.s.sol:DeployXetrius` and attempts verification (`--verify`). If verification fails, add the correct Blockscout / WireFluid verifier configuration to `foundry.toml` or verify manually on the explorer.
+You can use `forge script ... --rpc-url wirefluid` (alias in `foundry.toml`). After deployment, verify contracts on [wirefluidscan.com](https://wirefluidscan.com) (e.g. `forge verify-contract` with `--verifier blockscout` and the explorer API URL from WireFluid docs). Do not re-run the deploy script only for verification, or you will deploy a second set of contracts.
 
 **Important:** The **`VERIFIER_ADDRESS`** (or deployer default) must match the address derived from **`SIGNER_PRIVATE_KEY`** in the Next.js server environment, or proof-based quests will revert with `InvalidProof`.
 

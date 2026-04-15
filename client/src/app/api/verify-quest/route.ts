@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { signQuestProof, logSigningEvent } from "@/lib/signer";
+import { verifyHasPass, getReferralCount } from "@/lib/chain-reader";
+import { hasVoted } from "@/lib/vote-store";
+import { getTossResult, getMatchWindow } from "@/lib/matches";
 import { logger } from "@/lib/logger";
 
 // ── Rate Limiting (in-memory, good enough for hackathon) ────────────
@@ -37,42 +40,62 @@ const tossVerificationSchema = z.object({
   predictedWinner: z.enum(["A", "B"]),
 });
 
-// ── Match Result Config (hardcoded / env for hackathon) ─────────────
+// ── Quest Verification Handlers ─────────────────────────────────────
 
-function getTossResult(matchId: number): "A" | "B" | null {
-  const results: Record<string, string> = {};
-  const envResults = process.env.TOSS_RESULTS;
-  if (envResults) {
-    for (const pair of envResults.split(",")) {
-      const [id, winner] = pair.split(":");
-      if (id && winner) results[id.trim()] = winner.trim();
-    }
-  }
-
-  // Fallback: match 1 = A wins
-  if (Object.keys(results).length === 0) {
-    results["1"] = "A";
-  }
-
-  const result = results[String(matchId)];
-  if (result === "A" || result === "B") return result;
+async function verifyTeamPass(userAddress: string): Promise<string | null> {
+  const hasPas = await verifyHasPass(userAddress);
+  if (!hasPas) return "You don't have a Team Pass";
   return null;
 }
 
-function getMatchWindow(matchId: number): { start: number; end: number } | null {
-  const startEnv = process.env[`MATCH_${matchId}_START`];
-  if (startEnv) {
-    const start = Number(startEnv);
-    return { start, end: start + 6 * 60 * 60 * 1000 }; // 6 hour window
+function verifyTossPrediction(
+  verificationData: unknown,
+  matchId: number
+): string | null {
+  const tossData = tossVerificationSchema.safeParse(verificationData);
+  if (!tossData.success) {
+    return "verificationData must include predictedWinner: 'A' | 'B'";
   }
 
-  // Fallback: match 1 window is always open for hackathon demo
-  if (matchId === 1) {
-    const now = Date.now();
-    return { start: now - 3 * 60 * 60 * 1000, end: now + 3 * 60 * 60 * 1000 };
+  const correctResult = getTossResult(matchId);
+  if (!correctResult) return "No toss result available for this match";
+  if (tossData.data.predictedWinner !== correctResult) return "Incorrect toss prediction";
+  return null;
+}
+
+function verifyMatchCheckin(matchId: number): string | null {
+  const window = getMatchWindow(matchId);
+  if (!window) return "No match window configured for this match";
+
+  const now = Date.now();
+  if (now < window.start || now > window.end) {
+    return "Check-in is only available during the match window";
   }
   return null;
 }
+
+function verifyFanVote(userAddress: string, matchId: number): string | null {
+  if (!hasVoted(userAddress, matchId)) {
+    return "You must vote in the fan poll before completing this quest";
+  }
+  return null;
+}
+
+async function verifyReferral(userAddress: string): Promise<string | null> {
+  const count = await getReferralCount(userAddress);
+  if (count < 1) return "You need at least one referral to complete this quest";
+  return null;
+}
+
+// ── Error code mapping ──────────────────────────────────────────────
+
+const ERROR_CODES: Record<number, string> = {
+  1: "NO_PASS",
+  2: "TOSS_FAILED",
+  3: "CHECKIN_FAILED",
+  4: "VOTE_REQUIRED",
+  5: "NO_REFERRALS",
+};
 
 // ── Route Handler ───────────────────────────────────────────────────
 
@@ -99,53 +122,36 @@ export async function POST(request: NextRequest) {
 
     // ── Quest-specific verification ─────────────────────────────────
 
-    if (questId === 2) {
-      // Toss Prediction
-      const tossData = tossVerificationSchema.safeParse(verificationData);
-      if (!tossData.success) {
+    let errorMsg: string | null = null;
+
+    switch (questId) {
+      case 1:
+        errorMsg = await verifyTeamPass(userAddress);
+        break;
+      case 2:
+        errorMsg = verifyTossPrediction(verificationData, matchId);
+        break;
+      case 3:
+        errorMsg = verifyMatchCheckin(matchId);
+        break;
+      case 4:
+        errorMsg = verifyFanVote(userAddress, matchId);
+        break;
+      case 5:
+        errorMsg = await verifyReferral(userAddress);
+        break;
+      default:
         return NextResponse.json(
-          { error: "verificationData must include predictedWinner: 'A' | 'B'", code: "INVALID_VERIFICATION_DATA" },
+          { error: "Unknown quest", code: "UNKNOWN_QUEST" },
           { status: 400 }
         );
-      }
+    }
 
-      const correctResult = getTossResult(matchId);
-      if (!correctResult) {
-        return NextResponse.json(
-          { error: "No toss result available for this match", code: "NO_RESULT" },
-          { status: 404 }
-        );
-      }
-
-      if (tossData.data.predictedWinner !== correctResult) {
-        logSigningEvent(userAddress, questId, matchId, false);
-        return NextResponse.json(
-          { error: "Incorrect toss prediction", code: "INCORRECT_PREDICTION" },
-          { status: 403 }
-        );
-      }
-    } else if (questId === 3) {
-      // Match Check-in — verify timestamp is within match window
-      const window = getMatchWindow(matchId);
-      if (!window) {
-        return NextResponse.json(
-          { error: "No match window configured for this match", code: "NO_MATCH_WINDOW" },
-          { status: 404 }
-        );
-      }
-
-      const now = Date.now();
-      if (now < window.start || now > window.end) {
-        logSigningEvent(userAddress, questId, matchId, false);
-        return NextResponse.json(
-          { error: "Check-in is only available during the match window", code: "OUTSIDE_WINDOW" },
-          { status: 403 }
-        );
-      }
-    } else {
+    if (errorMsg) {
+      logSigningEvent(userAddress, questId, matchId, false);
       return NextResponse.json(
-        { error: "This quest does not require backend verification", code: "NO_PROOF_NEEDED" },
-        { status: 400 }
+        { error: errorMsg, code: ERROR_CODES[questId] ?? "VERIFICATION_FAILED" },
+        { status: 403 }
       );
     }
 
